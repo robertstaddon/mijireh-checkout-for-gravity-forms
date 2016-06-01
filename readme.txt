@@ -2,11 +2,13 @@
 Contributors: patsatech
 Tags: ecommerce, payment gateway, gravity forms, mijireh checkout, credit card
 Requires at least: 3.5
-Tested up to: 4.0
-Stable tag: 1.0.0
+Tested up to: 4.5.2
+Stable tag: 1.0.1
 License: GPLv2 or later
 
 Mijireh Checkout Plugin for accepting payments on with your Gravity Forms.
+
+An improved version of the Mijireh Gravity Forms integration originally provided by PatSaTECH - https://wordpress.org/plugins/mijireh-checkout-for-gravity-forms/
 
 == Description ==
 
@@ -63,6 +65,9 @@ Send us your ideas and feedback here: http://www.patsatech.com/contact-us
 4. Mijireh Checkout Stats Page
 
 == Changelog ==
+
+= 1.0.1 =
+* Fix: Compatible with Gravity Forms Coupons module
 
 = 1.0.0 =
 * Initial Release
