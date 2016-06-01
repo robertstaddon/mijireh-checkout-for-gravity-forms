@@ -1827,7 +1827,14 @@ class GFMijirehCheckout {
         }
 		
 		$mj_order->total = $total;
-	
+
+        // if the request has a $0 total, go ahead and set_payment_status as if it was paid and then return confirmation		
+        if($total == 0) {
+            self::log_debug("Not redirecting to Mijireh Checkout: Order total is $0");
+            self::set_payment_status($config, $entry, 'paid', 'No Transaction ID', 'No Parent Transaction', '0.00', $mj_order );
+            return $confirmation;
+		}
+		
 		try {
 			$mj_order->create();
 			$url = $mj_order->checkout_url;
