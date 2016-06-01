@@ -2609,7 +2609,7 @@ class GFMijirehCheckout {
 		RGFormsModel::add_note($lead["id"], $user_id, $user_name, sprintf(__("Payment information was manually updated. Status: %s. Amount: %s. Transaction Id: %s. Date: %s", "gravityforms"), $lead["payment_status"], GFCommon::to_money($lead["payment_amount"], $lead["currency"]), $payment_transaction, $lead["payment_date"]));
 	}
 
-	function set_logging_supported($plugins)
+	public static function set_logging_supported($plugins)
 	{
 		$plugins[self::$slug] = "Mijireh Checkout";
 		return $plugins;
