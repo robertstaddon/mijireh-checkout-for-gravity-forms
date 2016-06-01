@@ -2280,13 +2280,14 @@ class GFMijirehCheckout {
 
         if($discount > 0){
 			$mj_order->discount 		= $discount;
+			$total						= $total - $discount;
         }
 
         $shipping = !empty($products["shipping"]["price"]) ? $products["shipping"]["price"] : "0.00";
 		$mj_order->shipping 		= $shipping;
 		$mj_order->show_tax			= false;
 
-        return $total > 0 && $total > $discount ? $total : '0.00';
+        return $total > 0 ? $total : '0.00';
     }
 
     private static function get_donation_query_string($form, $entry, $mj_order){
