@@ -650,8 +650,11 @@ class GFMijirehCheckout {
         }
         else if(isset($_POST["gf_mijireh_checkout_submit"])){
             check_admin_referer("update", "gf_mijireh_checkout_update");
-            $settings = array( 	"access_key" => rgpost("gf_mijireh_checkout_access_key")
-                                );
+            $settings = array(
+				"access_key" => rgpost("gf_mijireh_checkout_access_key"),
+				"gateway_description_enable" => rgpost("gf_mijireh_checkout_gateway_description_enable"),
+				"gateway_description" => rgpost("gf_mijireh_checkout_gateway_description")
+            );
 
 
             update_option("gf_mijireh_checkout_settings", $settings);
@@ -686,6 +689,21 @@ class GFMijirehCheckout {
                         <input class="size-1" id="gf_mijireh_checkout_access_key" name="gf_mijireh_checkout_access_key" value="<?php echo esc_attr(rgar($settings,"access_key")) ?>" />
                     </td>
                 </tr>
+				<tr>
+                    <th scope="row" nowrap="nowrap"><label for="gf_mijireh_checkout_gateway_description"><?php _e("Custom Gateway Description", "gravityformsmijirehcheckout"); ?></label> </th>
+                    <td width="88%">
+                        <p><input type="checkbox" class="size-1" id="gf_mijireh_checkout_gateway_description_enable" name="gf_mijireh_checkout_gateway_description_enable" <?php if(rgar($settings,"gateway_description_enable")) { ?>checked<?php } ?> />
+						<label for="gf_mijireh_checkout_gateway_description_enable"><?php _e("Enable customized {{woo_commerce_order_id}} token for Gateway Description", "gravityformsmijirehcheckout"); ?></label></p>
+						<p>Mijireh Checkout allows you to customize the order information that gets sent to your gateway in the description field. One of only two tokens available in Mijireh Checkout for this is {{woo_commerce_order_id}}. Enabling the setting above allows you to load that token with whatever information you enter in the field below. You may then use this token in Mijireh Checkout when editing your Store's "Gateway Description Configuration".</p>
+                    </td>
+				</tr>
+				<tr>
+                    <th scope="row" nowrap="nowrap">&nbsp;</th>
+                    <td width="88%">
+                        <input class="size-1" id="gf_mijireh_checkout_gateway_description" name="gf_mijireh_checkout_gateway_description" value="<?php echo esc_attr(rgar($settings,"gateway_description")) ?>" />
+						<p>Possible dynamic values include: <strong>[site_name]</strong>. <strong>[site_url]</strong>, <strong>[form_name]</strong>, and <strong>[form_id]</strong>.</p>
+                    </td>
+				</tr>					
                 <tr>
                     <td colspan="2" ><input type="submit" name="gf_mijireh_checkout_submit" class="button-primary" value="<?php _e("Save Settings", "gravityformsmijirehcheckout") ?>" /></td>
                 </tr>
@@ -1813,6 +1831,18 @@ class GFMijirehCheckout {
         $custom_field = $entry["id"] . "|" . wp_hash($entry["id"]);
 		
 		$mj_order->add_meta_data( 'gf_custom_id', $custom_field );
+		
+		// Add "wc_order_id" if "Enable customized {{woo_commerce_order_id}} token for Gateway Description" is checked in settings
+		$settings = get_option("gf_mijireh_checkout_settings");
+		if( !empty($settings["gateway_description_enable"]) ) {
+			$description = $settings["gateway_description"];
+			
+			$tokens = array("[site_name]", "[site_url]", "[form_name]", "[form_id]");
+			$values = array(get_bloginfo('name'), get_bloginfo('url'), $form["title"], $form["id"]);
+			$description = str_replace($tokens, $values, $description);
+			
+			$mj_order->add_meta_data( 'wc_order_id', $description );
+		}
 
 		$mj_order->return_url = $ipn_url;
 		
