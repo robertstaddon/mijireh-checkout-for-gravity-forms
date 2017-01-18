@@ -2267,7 +2267,7 @@ class GFMijirehCheckout {
             break;
 
             case "donation" :
-                $product_amount = self::get_donation_query_string($form, $lead);
+                $product_amount = self::get_donation_query_string($form, $lead, $mj_order);
             break;
 
         }
