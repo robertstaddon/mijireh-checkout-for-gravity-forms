@@ -3,12 +3,12 @@
  * Plugin Name: Mijireh Checkout for Gravity Forms
  * Plugin URI: http://www.patsatech.com/
  * Description: Allows for integration with the Mijireh Checkout payment gateway.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: robertstaddon
  * Author URI: http://www.abundantdesigns.com
  * Contributors: patsatech, robertstaddon
  * Requires at least: 3.5
- * Tested up to: 4.6.1
+ * Tested up to: 4.7
  *
  * Text Domain: gravityformsmijirehcheckout
  * Domain Path: /lang/
@@ -402,13 +402,13 @@ class GFMijirehCheckout {
             //to the new structure when upgrading to the new Mijireh Checkout Add-On
             if(!rgempty("delay_autoresponder", $config['meta'])){
                 $user_notification = self::get_notification_by_type($form, "user");
-                if($user_notification)
+                if( !empty($user_notification) )
                     $selected_notifications[] = $user_notification["id"];
             }
 
             if(!rgempty("delay_notification", $config['meta'])){
                 $admin_notification = self::get_notification_by_type($form, "admin");
-                if($admin_notification)
+                if( !empty($admin_notification) )
                     $selected_notifications[] = $admin_notification["id"];
             }
         }
@@ -597,7 +597,7 @@ class GFMijirehCheckout {
                 jQuery("#feed_form")[0].submit();
             }
             function ToggleActive(img, feed_id){
-                var is_active = img.src.indexOf("active1.png") >=0
+                var is_active = img.src.indexOf("active1.png") >= 0;
                 if(is_active){
                     img.src = img.src.replace("active1.png", "active0.png");
                     jQuery(img).attr('title','<?php _e("Inactive", "gravityformsmijirehcheckout") ?>').attr('alt', '<?php _e("Inactive", "gravityformsmijirehcheckout") ?>');
@@ -1782,30 +1782,28 @@ class GFMijirehCheckout {
     public static function send_to_mijireh_checkout($confirmation, $form, $entry, $ajax){
 
         // ignore requests that are not the current form's submissions
-        if(RGForms::post("gform_submit") != $form["id"])
-        {
+        if (RGForms::post("gform_submit") != $form["id"]) {
             return $confirmation;
 		}
 
         //$config = self::get_active_config($form);
         $config = GFMijirehCheckoutData::get_feed_by_form($form["id"]);
 
-        if(!$config)
-        {
-            self::log_debug("NOT sending to Mijireh Checkout: No Mijireh Checkout setup was located for form_id = {$form['id']}.");
+        if (!$config) {
+            self::log_debug( "NOT sending to Mijireh Checkout: No Mijireh Checkout setup was located for form_id = {$form['id']}." );
             return $confirmation;
-		}else{
+		} else {
             $config = $config[0]; //using first mijireh feed (only one mijireh feed per form is supported)
 		}
 
         // updating entry meta with current feed id
-        gform_update_meta($entry["id"], "mijireh_checkout_feed_id", $config["id"]);
+        gform_update_meta( $entry["id"], "mijireh_checkout_feed_id", $config["id"] );
 
         // updating entry meta with current payment gateway
-        gform_update_meta($entry["id"], "payment_gateway", "mijireh");
+        gform_update_meta( $entry["id"], "payment_gateway", "mijireh" );
 
         //updating lead's payment_status to Processing
-        RGFormsModel::update_lead_property($entry["id"], "payment_status", 'Processing');
+        RGFormsModel::update_lead_property( $entry["id"], "payment_status", 'Processing' );
 
 		self::init_mijireh();
 		
@@ -1813,55 +1811,55 @@ class GFMijirehCheckout {
 		
 		$mj_order->partner_id 		= 'patsatech';
 
-        $invoice_id = apply_filters("gform_mijireh_checkout_invoice", "", $form, $entry);
+        $invoice_id = apply_filters( "gform_mijireh_checkout_invoice", "", $form, $entry );
 
 		$red = $entry['id'];
 		
-        $invoice = empty($invoice_id) ? $red : $invoice_id;
+        $invoice = empty( $invoice_id ) ? $red : $invoice_id;
 		
 		// add meta data to identify gravityforms order
 		$mj_order->add_meta_data( 'gf_order_id', $invoice );
 
         //Customer fields
-        self::customer_query_string($config, $entry, $mj_order);
+        self::customer_query_string( $config, $entry, $mj_order );
 		
         //URL that will listen to notifications from Mijireh Checkout
-        $ipn_url = get_bloginfo("url") . "/?page=gf_mijireh_checkout_ipn&custom=".$entry["id"];
+        $ipn_url = get_bloginfo( "url" ) . "/?page=gf_mijireh_checkout_ipn&custom=".$entry["id"];
 		
-        $custom_field = $entry["id"] . "|" . wp_hash($entry["id"]);
+        $custom_field = $entry["id"] . "|" . wp_hash( $entry["id"] );
 		
 		$mj_order->add_meta_data( 'gf_custom_id', $custom_field );
 		
 		// Add "wc_order_id" if "Enable customized {{woo_commerce_order_id}} token for Gateway Description" is checked in settings
-		$settings = get_option("gf_mijireh_checkout_settings");
-		if( !empty($settings["gateway_description_enable"]) ) {
+		$settings = get_option( "gf_mijireh_checkout_settings" );
+		if( !empty( $settings["gateway_description_enable"] ) ) {
 			$description = $settings["gateway_description"];
 			
-			$tokens = array("[site_name]", "[site_url]", "[form_name]", "[form_id]");
-			$values = array(get_bloginfo('name'), get_bloginfo('url'), $form["title"], $form["id"]);
-			$description = str_replace($tokens, $values, $description);
+			$tokens = array( "[site_name]", "[site_url]", "[form_name]", "[form_id]" );
+			$values = array( get_bloginfo('name'), get_bloginfo('url'), $form["title"], $form["id"] );
+			$description = str_replace( $tokens, $values, $description );
 			
 			$mj_order->add_meta_data( 'wc_order_id', $description );
 		}
 
 		$mj_order->return_url = $ipn_url;
 		
-        switch($config["meta"]["type"]){
+        switch($config["meta"]["type"]) {
             case "product" :
-                $total = self::get_product_query_string($form, $entry, $mj_order);
+                $total = self::get_product_query_string( $form, $entry, $mj_order );
             break;
 
             case "donation" :
-                $total = self::get_donation_query_string($form, $entry, $mj_order);
+                $total = self::get_donation_query_string( $form, $entry, $mj_order );
             break;
         }
 		
 		$mj_order->total = $total;
 
         // if the request has a $0 total, go ahead and set_payment_status as if it was paid and then return confirmation		
-        if($total == 0) {
-            self::log_debug("Not redirecting to Mijireh Checkout: Order total is $0");
-            self::set_payment_status($config, $entry, 'paid', 'No Transaction ID', 'No Parent Transaction', '0.00', $mj_order );
+        if ( $total == 0 ) {
+            self::log_debug( "Not redirecting to Mijireh Checkout: Order total is $0" );
+            self::set_payment_status( $config, $entry, 'paid', 'No Transaction ID', 'No Parent Transaction', '0.00', $mj_order );
             return $confirmation;
 		}
 		
@@ -1877,13 +1875,13 @@ class GFMijirehCheckout {
 					
 		}
 		
-        if(headers_sent() || $ajax){
+        if ( headers_sent() || $ajax ) {
             $confirmation = "<script>function gformRedirect(){document.location.href='$url';}";
             if(!$ajax)
                 $confirmation .="gformRedirect();";
             $confirmation .="</script>";
         }
-        else{
+        else {
             $confirmation = array("redirect" => $url);
         }
 
