@@ -699,7 +699,7 @@ class GFMijirehCheckout {
                     <th scope="row" nowrap="nowrap">&nbsp;</th>
                     <td width="88%">
                         <input class="size-1" id="gf_mijireh_checkout_gateway_description" name="gf_mijireh_checkout_gateway_description" value="<?php echo esc_attr(rgar($settings,"gateway_description")) ?>" />
-						<p>Possible dynamic values include: <strong>[site_name]</strong>. <strong>[site_url]</strong>, <strong>[form_name]</strong>, and <strong>[form_id]</strong>.</p>
+						<p>Possible dynamic values include: <strong>[site_name]</strong>, <strong>[site_url]</strong>, <strong>[site_domain]</strong>, </strong><strong>[form_name]</strong>, and <strong>[form_id]</strong>.</p>
                     </td>
 				</tr>					
                 <tr>
@@ -1838,8 +1838,8 @@ class GFMijirehCheckout {
 		if( !empty( $settings["gateway_description_enable"] ) ) {
 			$description = $settings["gateway_description"];
 			
-			$tokens = array( "[site_name]", "[site_url]", "[form_name]", "[form_id]" );
-			$values = array( get_bloginfo('name'), get_bloginfo('url'), $form["title"], $form["id"] );
+			$tokens = array( "[site_name]", "[site_url]", "[site_domain]", "[form_name]", "[form_id]" );
+			$values = array( get_bloginfo('name'), get_bloginfo('url'), $_SERVER['HTTP_HOST'], $form["title"], $form["id"] );
 			$description = str_replace( $tokens, $values, $description );
 			
 			$mj_order->add_meta_data( 'wc_order_id', $description );
@@ -1871,11 +1871,9 @@ class GFMijirehCheckout {
 			$url = $mj_order->checkout_url;
 
        		self::log_debug("Sending to Mijireh Checkout: {$url}");
-		
-		} catch (Mijireh_Exception $e) {
-			
+		}
+		catch (Mijireh_Exception $e) {
 	        self::log_debug( __('Mijireh error:', 'woocommerce' ) . $e->getMessage() );
-					
 		}
 		
         if ( headers_sent() || $ajax ) {
