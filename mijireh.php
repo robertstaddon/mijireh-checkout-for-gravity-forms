@@ -2593,42 +2593,38 @@ class GFMijirehCheckout {
 		<?php
 	}
 
-	public static function admin_update_payment($form, $lead_id)
-	{
-		check_admin_referer('gforms_save_entry', 'gforms_save_entry');
+	public static function admin_update_payment( $form, $lead_id ) {
+		check_admin_referer( 'gforms_save_entry', 'gforms_save_entry' );
 		//update payment information in admin, need to use this function so the lead data is updated before displayed in the sidebar info section
 		//check meta to see if this entry is mijirehcheckout
-		$payment_gateway = gform_get_meta($lead_id, "payment_gateway");
-		$form_action = strtolower(rgpost("save"));
-		if ($payment_gateway <> "mijirehcheckout" || $form_action <> "update")
+		$payment_gateway = gform_get_meta( $lead_id, "payment_gateway" );
+		$form_action = strtolower( rgpost("save") );
+		if ( $payment_gateway <> "mijirehcheckout" || $form_action <> "update" )
 			return;
 		//get lead
-		$lead = RGFormsModel::get_lead($lead_id);
+		$lead = RGFormsModel::get_lead( $lead_id );
 		//get payment fields to update
-		$payment_status = rgpost("payment_status");
+		$payment_status = rgpost( "payment_status" );
 		//when updating, payment status may not be editable, if no value in post, set to lead payment status
-		if (empty($payment_status))
-		{
+		if ( empty( $payment_status ) ) {
 			$payment_status = $lead["payment_status"];
 		}
 
-		$payment_amount = rgpost("payment_amount");
-		$payment_transaction = rgpost("mijireh_checkout_transaction_id");
-		$payment_date = rgpost("payment_date");
-		if (empty($payment_date))
-		{
+		$payment_amount = rgpost( "payment_amount" );
+		$payment_transaction = rgpost( "mijireh_checkout_transaction_id" );
+		$payment_date = rgpost( "payment_date" );
+		if ( empty( $payment_date ) ) {
 			$payment_date = gmdate("y-m-d H:i:s");
 		}
-		else
-		{
+		else {
 			//format date entered by user
-			$payment_date = date("Y-m-d H:i:s", strtotime($payment_date));
+			$payment_date = date( "Y-m-d H:i:s", strtotime( $payment_date ) );
 		}
 
 		global $current_user;
 		$user_id = 0;
         $user_name = "System";
-        if($current_user && $user_data = get_userdata($current_user->ID)){
+        if ( $current_user && $user_data = get_userdata( $current_user->ID ) ) {
             $user_id = $current_user->ID;
             $user_name = $user_data->display_name;
         }
@@ -2639,68 +2635,64 @@ class GFMijirehCheckout {
 		$lead["transaction_id"] = $payment_transaction;
 
 		// if payment status does not equal approved or the lead has already been fulfilled, do not continue with fulfillment
-        if($payment_status == 'Approved' && !$lead["is_fulfilled"])
-        {
+        if ( $payment_status == 'Approved' && !$lead["is_fulfilled"] ) {
         	//call fulfill order, mark lead as fulfilled
         	self::fulfill_order($lead, $payment_transaction, $payment_amount);
         	$lead["is_fulfilled"] = true;
 		}
 		//update lead, add a note
 		RGFormsModel::update_lead($lead);
-		RGFormsModel::add_note($lead["id"], $user_id, $user_name, sprintf(__("Payment information was manually updated. Status: %s. Amount: %s. Transaction Id: %s. Date: %s", "gravityforms"), $lead["payment_status"], GFCommon::to_money($lead["payment_amount"], $lead["currency"]), $payment_transaction, $lead["payment_date"]));
+		RGFormsModel::add_note( $lead["id"], $user_id, $user_name, sprintf( __( "Payment information was manually updated. Status: %s. Amount: %s. Transaction Id: %s. Date: %s", "gravityforms" ), $lead["payment_status"], GFCommon::to_money( $lead["payment_amount"], $lead["currency"] ), $payment_transaction, $lead["payment_date"] ) );
 	}
 
-	public static function set_logging_supported($plugins)
-	{
+	public static function set_logging_supported( $plugins ) {
 		$plugins[self::$slug] = "Mijireh Checkout";
 		return $plugins;
 	}
 
-	private static function log_error($message){
-		if(class_exists("GFLogging"))
-		{
+	private static function log_error( $message ){
+		if ( class_exists("GFLogging") ) {
 			GFLogging::include_logger();
-			GFLogging::log_message(self::$slug, $message, KLogger::ERROR);
+			GFLogging::log_message( self::$slug, $message, KLogger::ERROR );
 		}
 	}
 
-	private static function log_debug($message){
-		if(class_exists("GFLogging"))
-		{
+	private static function log_debug( $message ){
+		if ( class_exists("GFLogging") ) {
 			GFLogging::include_logger();
-			GFLogging::log_message(self::$slug, $message, KLogger::DEBUG);
+			GFLogging::log_message( self::$slug, $message, KLogger::DEBUG );
 		}
 	}
 }
 
-if(!function_exists("rgget")){
-function rgget($name, $array=null){
-    if(!isset($array))
-        $array = $_GET;
-
-    if(isset($array[$name]))
-        return $array[$name];
-
-    return "";
-}
-}
-
-if(!function_exists("rgpost")){
-function rgpost($name, $do_stripslashes=true){
-    if(isset($_POST[$name]))
-        return $do_stripslashes ? stripslashes_deep($_POST[$name]) : $_POST[$name];
-
-    return "";
-}
+if ( !function_exists( "rgget" ) ){
+	function rgget( $name, $array = null ) {
+		if ( !isset( $array ) )
+			$array = $_GET;
+	
+		if ( isset($array[$name] ) )
+			return $array[$name];
+	
+		return "";
+	}
 }
 
-if(!function_exists("rgar")){
-function rgar($array, $name){
-    if(isset($array[$name]))
-        return $array[$name];
-
-    return '';
+if ( !function_exists("rgpost") ) {
+	function rgpost( $name, $do_stripslashes = true ) {
+		if ( isset( $_POST[$name] ) )
+			return $do_stripslashes ? stripslashes_deep( $_POST[$name] ) : $_POST[$name];
+	
+		return "";
+	}
 }
+
+if ( !function_exists("rgar") ) {
+	function rgar( $array, $name ) {
+		if ( isset( $array[$name] ) )
+			return $array[$name];
+	
+		return '';
+	}
 }
 
 if ( !function_exists("rgars") ) {
@@ -2724,7 +2716,7 @@ if ( !function_exists( "rgempty" ) ) {
 	}
 }
 
-if( !function_exists("rgblank") ) {
+if ( !function_exists("rgblank") ) {
 	function rgblank( $text ) {
 		return empty( $text ) && strval( $text ) != "0";
 	}
