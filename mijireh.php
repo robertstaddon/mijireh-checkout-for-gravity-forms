@@ -17,115 +17,113 @@
  * @author PatSaTECH
  */
 
-add_action('parse_request', array("GFMijirehCheckout", "process_ipn"));
-add_action('wp',  array('GFMijirehCheckout', 'maybe_thankyou_page'), 5);
+add_action( 'parse_request', array( 'GFMijirehCheckout', 'process_ipn' ) );
+add_action( 'wp',  array( 'GFMijirehCheckout', 'maybe_thankyou_page' ), 5);
 
-add_action('init',  array('GFMijirehCheckout', 'init'));
-register_activation_hook( __FILE__, array("GFMijirehCheckout", "add_permissions"));
+add_action( 'init',  array( 'GFMijirehCheckout', 'init' ));
+register_activation_hook( __FILE__, array( 'GFMijirehCheckout', 'add_permissions' ) );
 
-if(!defined("GF_MIJIREHCHECKOUT_PLUGIN_PATH"))
-    define("GF_MIJIREHCHECKOUT_PLUGIN_PATH", dirname( plugin_basename( __FILE__ ) ) );
+if( !defined( 'GF_MIJIREHCHECKOUT_PLUGIN_PATH' ) )
+    define( 'GF_MIJIREHCHECKOUT_PLUGIN_PATH', dirname( plugin_basename( __FILE__ ) ) );
 	
-if(!defined("GF_MIJIREHCHECKOUT_PLUGIN"))
-    define("GF_MIJIREHCHECKOUT_PLUGIN", dirname( plugin_basename( __FILE__ ) ) . "/mijireh.php" );
+if( !defined( 'GF_MIJIREHCHECKOUT_PLUGIN' ) )
+    define( 'GF_MIJIREHCHECKOUT_PLUGIN', dirname( plugin_basename( __FILE__ ) ) . '/mijireh.php' );
 
-if(!defined("GF_MIJIREHCHECKOUT_BASE_URL"))
-    define("GF_MIJIREHCHECKOUT_BASE_URL", plugins_url(null, __FILE__) );
+if( !defined( 'GF_MIJIREHCHECKOUT_BASE_URL' ) )
+    define( 'GF_MIJIREHCHECKOUT_BASE_URL', plugins_url(null, __FILE__) );
     
-if(!defined("GF_MIJIREHCHECKOUT_BASE_PATH"))
-    define("GF_MIJIREHCHECKOUT_BASE_PATH", WP_PLUGIN_DIR . "/" . basename(dirname(__FILE__)) );
+if( !defined( 'GF_MIJIREHCHECKOUT_BASE_PATH') )
+    define( 'GF_MIJIREHCHECKOUT_BASE_PATH', WP_PLUGIN_DIR . '/' . basename( dirname( __FILE__ ) ) );
 
 class GFMijirehCheckout {
 
     private static $path = GF_MIJIREHCHECKOUT_PLUGIN;
-    private static $url = "https://www.patsatech.com";
-    private static $slug = "gravityformsmijirehcheckout";
-    private static $version = "1.0.0";
-    private static $min_gravityforms_version = "1.6.4";
-    private static $supported_fields = array("checkbox", "radio", "select", "text", "website", "textarea", "email", "hidden", "number", "phone", "multiselect", "post_title", "post_tags", "post_custom_field", "post_content", "post_excerpt");
+    private static $url = 'https://www.patsatech.com';
+    private static $slug = 'gravityformsmijirehcheckout';
+    private static $version = '1.0.3';
+    private static $min_gravityforms_version = '1.6.4';
+    private static $supported_fields = array('checkbox', 'radio', 'select', 'text', 'website', 'textarea', 'email', 'hidden', 'number', 'phone', 'multiselect', 'post_title', 'post_tags', 'post_custom_field', 'post_content', 'post_excerpt');
 
     //Plugin starting point. Will load appropriate files
-    public static function init(){
+    public static function init() {
 		//supports logging
-		add_filter("gform_logging_supported", array("GFMijirehCheckout", "set_logging_supported"));
+		add_filter( 'gform_logging_supported', array( 'GFMijirehCheckout', 'set_logging_supported' ) );
 
-        if(basename($_SERVER['PHP_SELF']) == "plugins.php") {
-
+        if ( basename( $_SERVER['PHP_SELF'] ) == 'plugins.php' ) {
             //loading translations
             load_plugin_textdomain('gravityformsmijirehcheckout', FALSE, GF_MIJIREHCHECKOUT_PLUGIN_PATH . '/languages' );
-
         }
 
-        if(!self::is_gravityforms_supported())
+        if ( !self::is_gravityforms_supported() )
            return;
 
-        if(is_admin()){
+        if ( is_admin() ) {
             //loading translations
-            load_plugin_textdomain('gravityformsmijirehcheckout', FALSE, GF_MIJIREHCHECKOUT_PLUGIN_PATH . '/languages' );
+            load_plugin_textdomain( 'gravityformsmijirehcheckout', FALSE, GF_MIJIREHCHECKOUT_PLUGIN_PATH . '/languages' );
 
             //integrating with Members plugin
-            if(function_exists('members_get_capabilities'))
-                add_filter('members_get_capabilities', array("GFMijirehCheckout", "members_get_capabilities"));
+            if ( function_exists( 'members_get_capabilities') )
+                add_filter( 'members_get_capabilities', array( 'GFMijirehCheckout', 'members_get_capabilities' ) );
 
             //creates the subnav left menu
-            add_filter("gform_addon_navigation", array('GFMijirehCheckout', 'create_menu'));
+            add_filter( 'gform_addon_navigation', array('GFMijirehCheckout', 'create_menu') );
 
             //add actions to allow the payment status to be modified
-            add_action('gform_payment_status', array('GFMijirehCheckout','admin_edit_payment_status'), 3, 3);
-            add_action('gform_entry_info', array('GFMijirehCheckout','admin_edit_payment_status_details'), 4, 2);
-            add_action('gform_after_update_entry', array('GFMijirehCheckout','admin_update_payment'), 4, 2);
+            add_action( 'gform_payment_status', array( 'GFMijirehCheckout','admin_edit_payment_status' ), 3, 3 );
+            add_action( 'gform_entry_info', array( 'GFMijirehCheckout','admin_edit_payment_status_details' ), 4, 2 );
+            add_action( 'gform_after_update_entry', array( 'GFMijirehCheckout','admin_update_payment' ), 4, 2 );
 		  	add_action( 'add_meta_boxes', array( 'GFMijirehCheckout', 'add_page_slurp_meta' ) );
 		  	add_action( 'wp_ajax_page_slurp', array( 'GFMijirehCheckout', 'page_slurp' ) );
 
 
-            if(self::is_mijireh_checkout_page()){
+            if ( self::is_mijireh_checkout_page() ) {
 
                 //loading Gravity Forms tooltips
-                require_once(GFCommon::get_base_path() . "/tooltips.php");
+                require_once(GFCommon::get_base_path() . '/tooltips.php');
                 add_filter('gform_tooltips', array('GFMijirehCheckout', 'tooltips'));
 
                 //enqueueing sack for AJAX requests
-                wp_enqueue_script(array("sack"));
+                wp_enqueue_script(array('sack'));
 
                 //loading data lib
-                require_once(GF_MIJIREHCHECKOUT_BASE_PATH . "/data.php");
+                require_once(GF_MIJIREHCHECKOUT_BASE_PATH . '/data.php');
 
                 //runs the setup when version changes
                 self::setup();
 
             }
-            else if(in_array(RG_CURRENT_PAGE, array("admin-ajax.php"))){
+            else if ( in_array( RG_CURRENT_PAGE, array( 'admin-ajax.php' ) ) ) {
 
                 //loading data class
-                require_once(GF_MIJIREHCHECKOUT_BASE_PATH . "/data.php");
+                require_once(GF_MIJIREHCHECKOUT_BASE_PATH . '/data.php');
 
-                add_action('wp_ajax_gf_mijireh_checkout_update_feed_active', array('GFMijirehCheckout', 'update_feed_active'));
-                add_action('wp_ajax_gf_select_mijireh_checkout_form', array('GFMijirehCheckout', 'select_mijireh_checkout_form'));
-                add_action('wp_ajax_gf_mijireh_checkout_load_notifications', array('GFMijirehCheckout', 'load_notifications'));
+                add_action( 'wp_ajax_gf_mijireh_checkout_update_feed_active', array( 'GFMijirehCheckout', 'update_feed_active' ) );
+                add_action( 'wp_ajax_gf_select_mijireh_checkout_form', array( 'GFMijirehCheckout', 'select_mijireh_checkout_form' ) );
+                add_action( 'wp_ajax_gf_mijireh_checkout_load_notifications', array( 'GFMijirehCheckout', 'load_notifications' ) );
 
             }
-            else if(RGForms::get("page") == "gf_settings"){
-                RGForms::add_settings_page("Mijireh Checkout", array("GFMijirehCheckout", "settings_page"), GF_MIJIREHCHECKOUT_BASE_URL . "/assets/images/mijireh_checkout_wordpress_icon_32.png");
+            else if ( RGForms::get('page') == 'gf_settings' ) {
+                RGForms::add_settings_page( 'Mijireh Checkout', array( 'GFMijirehCheckout', 'settings_page' ), GF_MIJIREHCHECKOUT_BASE_URL . '/assets/images/mijireh_checkout_wordpress_icon_32.png' );
             }
         }
         else{
             //loading data class
-            require_once(GF_MIJIREHCHECKOUT_BASE_PATH . "/data.php");
+            require_once( GF_MIJIREHCHECKOUT_BASE_PATH . '/data.php' );
 
             //handling post submission.
-            add_filter("gform_confirmation", array("GFMijirehCheckout", "send_to_mijireh_checkout"), 1000, 4);
+            add_filter( 'gform_confirmation', array( 'GFMijirehCheckout', 'send_to_mijireh_checkout' ), 1000, 4 );
 
             //setting some entry metas
-            //add_action("gform_after_submission", array("GFMijirehCheckout", "set_entry_meta"), 5, 2);
+            //add_action( 'gform_after_submission', array( 'GFMijirehCheckout', 'set_entry_meta' ), 5, 2 );
 
-            add_filter("gform_disable_post_creation", array("GFMijirehCheckout", "delay_post"), 10, 3);
-            add_filter("gform_disable_user_notification", array("GFMijirehCheckout", "delay_autoresponder"), 10, 3);
-            add_filter("gform_disable_admin_notification", array("GFMijirehCheckout", "delay_admin_notification"), 10, 3);
-            add_filter("gform_disable_notification", array("GFMijirehCheckout", "delay_notification"), 10, 4);
+            add_filter( 'gform_disable_post_creation', array( 'GFMijirehCheckout', 'delay_post' ), 10, 3 );
+            add_filter( 'gform_disable_user_notification', array( 'GFMijirehCheckout', 'delay_autoresponder' ), 10, 3 );
+            add_filter( 'gform_disable_admin_notification', array( 'GFMijirehCheckout', 'delay_admin_notification' ), 10, 3 );
+            add_filter( 'gform_disable_notification', array( 'GFMijirehCheckout', 'delay_notification' ), 10, 4 );
 
             // ManageWP premium update filters
-            add_filter( 'mwp_premium_update_notification', array('GFMijirehCheckout', 'premium_update_push') );
-            add_filter( 'mwp_premium_perform_update', array('GFMijirehCheckout', 'premium_update') );
+            add_filter( 'mwp_premium_update_notification', array( 'GFMijirehCheckout', 'premium_update_push' ) );
+            add_filter( 'mwp_premium_perform_update', array( 'GFMijirehCheckout', 'premium_update' ) );
         }
     }
 	
@@ -208,8 +206,8 @@ class GFMijirehCheckout {
 		echo    "<h2>Slurp your custom checkout page!</h2>";
 		echo    "<p>Get the page designed just how you want and when you're ready, click the button below and slurp it right up.</p>";
 		echo    "<div id='slurp_progress' class='meter progress progress-info progress-striped active' style='display: none;'><div id='slurp_progress_bar' class='bar' style='width: 20%;'>Slurping...</div></div>";
-		echo    "<p><a href='#' id='page_slurp' rel=". $post->ID ." class='button-primary'>Slurp This Page!</a> ";
-		echo    '<a class="nobold" href="' . Mijireh::preview_checkout_link() . '" id="view_slurp" target="_new">Preview Checkout Page</a></p>';
+		echo    "<p><a href='#' id='page_slurp' rel=$post->ID class='button-primary'>Slurp This Page!</a> ";
+		echo    "<a class='nobold' href='" . Mijireh::preview_checkout_link() . "' id='view_slurp' target='_new'>Preview Checkout Page</a></p>";
 		echo  "</div>";
     }
 
@@ -247,11 +245,11 @@ class GFMijirehCheckout {
 		if ( ! class_exists( 'Mijireh' ) ) {
 	    	require_once 'includes/Mijireh.php';
 			
-            $settings = get_option("gf_mijireh_checkout_settings");
-			$key = rgar($settings,"access_key");
+            $settings = get_option('gf_mijireh_checkout_settings');
+			$key = rgar($settings,'access_key');
 			
 	        if(empty($key)){
-	            self::log_debug("Unable to get Mijireh Checkout Access Key.");
+	            self::log_debug('Unable to get Mijireh Checkout Access Key.');
 			}else{
 				Mijireh::$access_key = $key;
 			}
@@ -260,9 +258,9 @@ class GFMijirehCheckout {
 	
     public static function update_feed_active(){
         check_ajax_referer('gf_mijireh_checkout_update_feed_active','gf_mijireh_checkout_update_feed_active');
-        $id = $_POST["feed_id"];
+        $id = $_POST['feed_id'];
         $feed = GFMijirehCheckoutData::get_feed($id);
-        GFMijirehCheckoutData::update_feed($id, $feed["form_id"], $_POST["is_active"], $feed["meta"]);
+        GFMijirehCheckoutData::update_feed($id, $feed['form_id'], $_POST['is_active'], $feed['meta']);
     }
 
     //-------------- Automatic upgrade ---------------------------------------
@@ -275,7 +273,7 @@ class GFMijirehCheckout {
             include_once( ABSPATH.'wp-admin/includes/plugin.php');
 
         $update = GFCommon::get_version_info();
-        if( $update["is_valid_key"] == true && version_compare(self::$version, $update["version"], '<') ){
+        if( $update['is_valid_key'] == true && version_compare(self::$version, $update['version'], '<') ){
             $plugin_data = get_plugin_data( __FILE__ );
             $plugin_data['type'] = 'plugin';
             $plugin_data['slug'] = self::$path;
@@ -293,11 +291,11 @@ class GFMijirehCheckout {
             include_once( ABSPATH.'wp-admin/includes/plugin.php');
 
         $update = GFCommon::get_version_info();
-        if( $update["is_valid_key"] == true && version_compare(self::$version, $update["version"], '<') ){
+        if( $update['is_valid_key'] == true && version_compare(self::$version, $update['version'], '<') ){
             $plugin_data = get_plugin_data( __FILE__ );
             $plugin_data['slug'] = self::$path;
             $plugin_data['type'] = 'plugin';
-            $plugin_data['url'] = isset($update["url"]) ? $update["url"] : false; // OR provide your own callback function for managing the update
+            $plugin_data['url'] = isset($update['url']) ? $update['url'] : false; // OR provide your own callback function for managing the update
 
             array_push($premium_update, $plugin_data);
         }
@@ -308,7 +306,7 @@ class GFMijirehCheckout {
         if(self::is_gravityforms_supported())
             return GFCommon::get_key();
         else
-            return "";
+            return '';
     }
     //------------------------------------------------------------------------
 
@@ -316,19 +314,19 @@ class GFMijirehCheckout {
     public static function create_menu($menus){
 
         // Adding submenu if user has access
-        $permission = self::has_access("gravityforms_mijireh_checkout");
+        $permission = self::has_access('gravityforms_mijireh_checkout');
         if(!empty($permission))
-            $menus[] = array("name" => "gf_mijireh_checkout", "label" => __("Mijireh Checkout", "gravityformsmijirehcheckout"), "callback" =>  array("GFMijirehCheckout", "mijireh_checkout_page"), "permission" => $permission);
+            $menus[] = array('name' => 'gf_mijireh_checkout', 'label' => __('Mijireh Checkout', 'gravityformsmijirehcheckout'), 'callback' =>  array('GFMijirehCheckout', 'mijireh_checkout_page'), 'permission' => $permission);
 
         return $menus;
     }
 
     //Creates or updates database tables. Will only run when version changes
     private static function setup(){
-        if(get_option("gf_mijireh_checkout_version") != self::$version)
+        if(get_option('gf_mijireh_checkout_version') != self::$version)
             GFMijirehCheckoutData::update_table();
 
-        update_option("gf_mijireh_checkout_version", self::$version);
+        update_option('gf_mijireh_checkout_version', self::$version);
     }
 
     //Adds feed tooltips to the list of tooltips
