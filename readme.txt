@@ -68,6 +68,7 @@ Send us your ideas and feedback here: http://www.patsatech.com/contact-us
 
 = 1.0.3 =
 * Fix: Enabled Mijireh Checkout Condition functionality
+* Fix: Fix fatal error when redirecting donations
 
 = 1.0.2 =
 * Feature: Add setting for customizing Gateway Description using the Mijireh Checkout {{woo_commerce_order_id}} token

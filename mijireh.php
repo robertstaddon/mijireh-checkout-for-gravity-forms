@@ -2703,29 +2703,29 @@ function rgar($array, $name){
 }
 }
 
-if(!function_exists("rgars")){
-function rgars($array, $name){
-    $names = explode("/", $name);
-    $val = $array;
-    foreach($names as $current_name){
-        $val = rgar($val, $current_name);
-    }
-    return $val;
-}
-}
-
-if(!function_exists("rgempty")){
-function rgempty($name, $array = null){
-    if(!$array)
-        $array = $_POST;
-
-    $val = rgget($name, $array);
-    return empty($val);
-}
+if ( !function_exists("rgars") ) {
+	function rgars( $array, $name ) {
+		$names = explode( "/", $name );
+		$val = $array;
+		foreach( $names as $current_name ) {
+			$val = rgar( $val, $current_name );
+		}
+		return $val;
+	}
 }
 
-if(!function_exists("rgblank")){
-function rgblank($text){
-    return empty($text) && strval($text) != "0";
+if ( !function_exists( "rgempty" ) ) {
+	function rgempty( $name, $array = null ) {
+		if ( !$array )
+			$array = $_POST;
+	
+		$val = rgget( $name, $array );
+		return empty( $val );
+	}
 }
+
+if( !function_exists("rgblank") ) {
+	function rgblank( $text ) {
+		return empty( $text ) && strval( $text ) != "0";
+	}
 }
