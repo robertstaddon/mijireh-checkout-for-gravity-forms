@@ -2,8 +2,8 @@
 Contributors: patsatech
 Tags: ecommerce, payment gateway, gravity forms, mijireh checkout, credit card
 Requires at least: 3.5
-Tested up to: 4.7
-Stable tag: 1.0.2
+Tested up to: 4.7.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 
 Mijireh Checkout Plugin for accepting payments on with your Gravity Forms.
@@ -65,6 +65,9 @@ Send us your ideas and feedback here: http://www.patsatech.com/contact-us
 4. Mijireh Checkout Stats Page
 
 == Changelog ==
+
+= 1.0.3 =
+* Fix: Enabled Mijireh Checkout Condition functionality
 
 = 1.0.2 =
 * Feature: Add setting for customizing Gateway Description using the Mijireh Checkout {{woo_commerce_order_id}} token
