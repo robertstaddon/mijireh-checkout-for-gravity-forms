@@ -3,7 +3,7 @@
  * Plugin Name: Mijireh Checkout for Gravity Forms
  * Plugin URI: http://www.patsatech.com/
  * Description: Allows for integration with the Mijireh Checkout payment gateway.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: robertstaddon
  * Author URI: http://www.abundantdesigns.com
  * Contributors: patsatech, robertstaddon
@@ -40,7 +40,7 @@ class GFMijirehCheckout {
     private static $path = GF_MIJIREHCHECKOUT_PLUGIN;
     private static $url = 'https://www.patsatech.com';
     private static $slug = 'gravityformsmijirehcheckout';
-    private static $version = '1.0.3';
+    private static $version = '1.0.4';
     private static $min_gravityforms_version = '1.6.4';
     private static $supported_fields = array('checkbox', 'radio', 'select', 'text', 'website', 'textarea', 'email', 'hidden', 'number', 'phone', 'multiselect', 'post_title', 'post_tags', 'post_custom_field', 'post_content', 'post_excerpt');
 
@@ -338,6 +338,7 @@ class GFMijirehCheckout {
             "mijireh_checkout_cancel_url" => "<h6>" . __("Cancel URL", "gravityformsmijirehcheckout") . "</h6>" . __("Enter the URL the user should be sent to should they cancel before completing their Mijireh Checkout payment.", "gravityformsmijirehcheckout"),
             "mijireh_checkout_options" => "<h6>" . __("Options", "gravityformsmijirehcheckout") . "</h6>" . __("Turn on or off the available Mijireh Checkout checkout options.", "gravityformsmijirehcheckout"),
             "mijireh_checkout_conditional" => "<h6>" . __("Mijireh Checkout Condition", "gravityformsmijirehcheckout") . "</h6>" . __("When the Mijireh Checkout condition is enabled, form submissions will only be sent to Mijireh Checkout when the condition is met. When disabled all form submissions will be sent to Mijireh Checkout.", "gravityformsmijirehcheckout"),
+            "mijireh_checkout_gateway_field" => "<h6>" . __("Custom Gateway Description Field", "gravityformsmijirehcheckout") . "</h6>" . __("The value of the selected field will be made available to the Custom Gateway Description as [form_field]. See Settings > Mijireh Checkout.", "gravityformsmijirehcheckout"),
             "mijireh_checkout_edit_payment_amount" => "<h6>" . __("Amount", "gravityformsmijirehcheckout") . "</h6>" . __("Enter the amount the user paid for this transaction.", "gravityformsmijirehcheckout"),
             "mijireh_checkout_edit_payment_date" => "<h6>" . __("Date", "gravityformsmijirehcheckout") . "</h6>" . __("Enter the date of this transaction.", "gravityformsmijirehcheckout"),
             "mijireh_checkout_edit_payment_transaction_id" => "<h6>" . __("Transaction ID", "gravityformsmijirehcheckout") . "</h6>" . __("The transacation id is returned from Mijireh Checkout and uniquely identifies this payment.", "gravityformsmijirehcheckout"),
@@ -427,12 +428,12 @@ class GFMijirehCheckout {
 
     }
 
-    public static function mijireh_checkout_page(){
-        $view = rgget("view");
-        if($view == "edit")
-            self::edit_page(rgget("id"));
-        else if($view == "stats")
-            self::stats_page(rgget("id"));
+    public static function mijireh_checkout_page() {
+        $view = rgget( "view" );
+        if( $view == "edit" )
+            self::edit_page( rgget("id") );
+        else if( $view == "stats" )
+            self::stats_page( rgget("id") );
         else
             self::list_page();
     }
@@ -699,7 +700,10 @@ class GFMijirehCheckout {
                     <th scope="row" nowrap="nowrap">&nbsp;</th>
                     <td width="88%">
                         <input class="size-1" id="gf_mijireh_checkout_gateway_description" name="gf_mijireh_checkout_gateway_description" value="<?php echo esc_attr(rgar($settings,"gateway_description")) ?>" />
-						<p>Possible dynamic values include: <strong>[site_name]</strong>, <strong>[site_url]</strong>, <strong>[site_domain]</strong>, </strong><strong>[form_name]</strong>, and <strong>[form_id]</strong>.</p>
+						<p>
+							Possible dynamic values include: <strong>[site_name]</strong>, <strong>[site_url]</strong>, <strong>[site_domain]</strong>, </strong><strong>[form_name]</strong>, <strong>[form_id]</strong>, and <strong>[form_total]</strong>.<br />
+							If a Gateway Description Field has been selected for a particular form, that value will be available as <strong>[form_field]</strong>.
+						</p>
                     </td>
 				</tr>					
                 <tr>
@@ -738,7 +742,7 @@ class GFMijirehCheckout {
         return $options;
     }
 
-    private static function stats_page(){
+    private static function stats_page() {
         ?>
         <style>
           .mijireh_checkout_graph_container{clear:both; padding-left:5px; min-width:789px; margin-right:50px;}
@@ -914,21 +918,21 @@ class GFMijirehCheckout {
         </div>
         <?php
     }
-    private function get_graph_timestamp($local_datetime){
+    private function get_graph_timestamp( $local_datetime ) {
         $local_timestamp = mysql2date("G", $local_datetime); //getting timestamp with timezone adjusted
         $local_date_timestamp = mysql2date("G", gmdate("Y-m-d 23:59:59", $local_timestamp)); //setting time portion of date to midnight (to match the way Javascript handles dates)
         $timestamp = ($local_date_timestamp - (24 * 60 * 60) + 1) * 1000; //adjusting timestamp for Javascript (subtracting a day and transforming it to milliseconds
         return $timestamp;
     }
 
-    private static function matches_current_date($format, $js_timestamp){
+    private static function matches_current_date( $format, $js_timestamp ) {
         $target_date = $format == "YW" ? $js_timestamp : date($format, $js_timestamp / 1000);
 
         $current_date = gmdate($format, GFCommon::get_local_timestamp(time()));
         return $target_date == $current_date;
     }
 
-    private static function daily_chart_info($config){
+    private static function daily_chart_info( $config ) {
         global $wpdb;
 
         $tz_offset = self::get_mysql_tz_offset();
@@ -993,7 +997,7 @@ class GFMijirehCheckout {
         return array("series" => $series, "options" => $options, "tooltips" => "[$tooltips]", "revenue_label" => __("Revenue Today", "gravityformsmijirehcheckout"), "revenue" => $revenue_today, "sales_label" => $sales_label, "sales" => $sales_today);
     }
 
-    private static function weekly_chart_info($config){
+    private static function weekly_chart_info( $config ) {
             global $wpdb;
 
             $tz_offset = self::get_mysql_tz_offset();
@@ -1054,7 +1058,7 @@ class GFMijirehCheckout {
             return array("series" => $series, "options" => $options, "tooltips" => "[$tooltips]", "revenue_label" => __("Revenue this Week", "gravityformsmijirehcheckout"), "revenue" => $revenue_week, "sales_label" => $sales_label , "sales" => $sales_week);
     }
 
-    private static function monthly_chart_info($config){
+    private static function monthly_chart_info( $config ) {
             global $wpdb;
             $tz_offset = self::get_mysql_tz_offset();
 
@@ -1223,6 +1227,8 @@ class GFMijirehCheckout {
                     unset($config["meta"]["delay_notification"]);
             }
 
+			$config["meta"]["gateway_field"] = rgpost('gf_mijireh_checkout_gateway_field');
+			
             // mijirehcheckout conditional
             $config["meta"]["mijireh_checkout_conditional_enabled"] = rgpost('gf_mijireh_checkout_conditional_enabled');
             $config["meta"]["mijireh_checkout_conditional_field_id"] = rgpost('gf_mijireh_checkout_conditional_field_id');
@@ -1385,6 +1391,18 @@ class GFMijirehCheckout {
                         </ul>
                     </div>
                 </div>
+				
+				<?php 
+				$settings = get_option( "gf_mijireh_checkout_settings" );
+				if( !empty($form) && !empty( $settings["gateway_description_enable"] ) ) { ?>
+				
+					<div class="margin_vertical_10">
+						<label class="left_header"><?php _e("Gateway Description Field", "gravityformsmijirehcheckout"); ?> <?php gform_tooltip("mijireh_checkout_gateway_field") ?></label>
+						<?php echo self::get_gateway_field_information( $form, $config ); ?>
+					</div>
+					
+				<?php
+				} ?>
 
                 <?php do_action("gform_mijireh_checkout_add_option_group", $config, $form); ?>
 
@@ -1484,7 +1502,7 @@ class GFMijirehCheckout {
                 return true;
             }
 
-            function EndSelectForm(form_meta, customer_fields, recurring_amount_options){
+            function EndSelectForm(form_meta, customer_fields, recurring_amount_options, gateway_field) {
 
                 //setting global form object
                 form = form_meta;
@@ -1506,6 +1524,7 @@ class GFMijirehCheckout {
                 jQuery(".mijireh_checkout_field_container").hide();
                 jQuery("#mijireh_checkout_customer_fields").html(customer_fields);
                 jQuery("#gf_mijireh_checkout_recurring_amount").html(recurring_amount_options);
+				jQuery("#gf_mijireh_checkout_gateway_field").html(gateway_field);
 
                 //displaying delayed post creation setting if current form has a post field
                 var post_fields = GetFieldsByType(["post_title", "post_content", "post_excerpt", "post_category", "post_custom_field", "post_image", "post_tag"]);
@@ -1729,7 +1748,7 @@ class GFMijirehCheckout {
 
     }
 
-    public static function select_mijireh_checkout_form(){
+    public static function select_mijireh_checkout_form() {
 
         check_ajax_referer("gf_select_mijireh_checkout_form", "gf_select_mijireh_checkout_form");
 
@@ -1740,13 +1759,14 @@ class GFMijirehCheckout {
         //fields meta
         $form = RGFormsModel::get_form_meta($form_id);
 
-        $customer_fields = self::get_customer_information($form);
-        $recurring_amount_fields = self::get_product_options($form, "");
+        $customer_fields = self::get_customer_information( $form );
+        $recurring_amount_fields = self::get_product_options( $form, "" );
+		$gateway_field = self::get_gateway_field_information( $form );
 
-        die("EndSelectForm(" . GFCommon::json_encode($form) . ", '" . str_replace("'", "\'", $customer_fields) . "', '" . str_replace("'", "\'", $recurring_amount_fields) . "');");
+        die("EndSelectForm(" . GFCommon::json_encode($form) . ", '" . str_replace("'", "\'", $customer_fields) . "', '" . str_replace("'", "\'", $recurring_amount_fields) . "', '" . str_replace("'", "\'", $gateway_field) . "');");
     }
 
-    public static function add_permissions(){
+    public static function add_permissions() {
         global $wp_roles;
         $wp_roles->add_cap("administrator", "gravityforms_mijireh_checkout");
         $wp_roles->add_cap("administrator", "gravityforms_mijireh_checkout_uninstall");
@@ -1761,7 +1781,7 @@ class GFMijirehCheckout {
         return array_merge($caps, array("gravityforms_mijireh_checkout", "gravityforms_mijireh_checkout_uninstall"));
     }
 
-    public static function get_active_config($form){
+    public static function get_active_config( $form ) {
 
         require_once(GF_MIJIREHCHECKOUT_BASE_PATH . "/data.php");
 
@@ -1777,7 +1797,7 @@ class GFMijirehCheckout {
         return false;
     }
 
-    public static function send_to_mijireh_checkout($confirmation, $form, $entry, $ajax){
+    public static function send_to_mijireh_checkout( $confirmation, $form, $entry, $ajax ) {
 
         // ignore requests that are not the current form's submissions
         if (RGForms::post("gform_submit") != $form["id"]) {
@@ -1787,6 +1807,8 @@ class GFMijirehCheckout {
         //$config = self::get_active_config($form);
         $config = GFMijirehCheckoutData::get_feed_by_form($form["id"]);
 
+		self::log_debug( "Entry: " . var_export( $entry, true ) );
+		
         if ( !$config ) {
             self::log_debug( "NOT sending to Mijireh Checkout: No Mijireh Checkout setup was located for form_id = {$form['id']}." );
             return $confirmation;
@@ -1832,22 +1854,10 @@ class GFMijirehCheckout {
         $custom_field = $entry["id"] . "|" . wp_hash( $entry["id"] );
 		
 		$mj_order->add_meta_data( 'gf_custom_id', $custom_field );
-		
-		// Add "wc_order_id" if "Enable customized {{woo_commerce_order_id}} token for Gateway Description" is checked in settings
-		$settings = get_option( "gf_mijireh_checkout_settings" );
-		if( !empty( $settings["gateway_description_enable"] ) ) {
-			$description = $settings["gateway_description"];
-			
-			$tokens = array( "[site_name]", "[site_url]", "[site_domain]", "[form_name]", "[form_id]" );
-			$values = array( get_bloginfo('name'), get_bloginfo('url'), $_SERVER['HTTP_HOST'], $form["title"], $form["id"] );
-			$description = str_replace( $tokens, $values, $description );
-			
-			$mj_order->add_meta_data( 'wc_order_id', $description );
-		}
 
 		$mj_order->return_url = $ipn_url;
 		
-        switch($config["meta"]["type"]) {
+        switch( $config["meta"]["type"] ) {
             case "product" :
                 $total = self::get_product_query_string( $form, $entry, $mj_order );
             break;
@@ -1858,12 +1868,25 @@ class GFMijirehCheckout {
         }
 		
 		$mj_order->total = $total;
-
+		
         // if the request has a $0 total, go ahead and set_payment_status as if it was paid and then return confirmation		
         if ( $total == 0 ) {
             self::log_debug( "Not redirecting to Mijireh Checkout: Order total is $0" );
             self::set_payment_status( $config, $entry, 'paid', 'No Transaction ID', 'No Parent Transaction', '0.00', $mj_order );
             return $confirmation;
+		}
+		
+		// Add "wc_order_id" if "Enable customized {{woo_commerce_order_id}} token for Gateway Description" is checked in settings
+		$settings = get_option( "gf_mijireh_checkout_settings" );
+		if( !empty( $settings["gateway_description_enable"] ) ) {
+			$description = $settings["gateway_description"];
+			$gateway_field_id = $config["meta"]["gateway_field"];
+			
+			$tokens = array( "[site_name]", "[site_url]", "[site_domain]", "[form_name]", "[form_id]", "[form_total]", "[form_field]" );
+			$values = array( get_bloginfo('name'), get_bloginfo('url'), $_SERVER['HTTP_HOST'], $form["title"], $form["id"], $total, $entry[$gateway_field_id] );
+			$description = str_replace( $tokens, $values, $description );
+			
+			$mj_order->add_meta_data( 'wc_order_id', $description );
 		}
 		
 		try {
@@ -1910,7 +1933,7 @@ class GFMijirehCheckout {
         return  $go_to_mijireh_checkout;
     }
 
-    public static function get_config($form_id){
+    public static function get_config( $form_id ) {
         if(!class_exists("GFMijirehCheckoutData"))
             require_once(GF_MIJIREHCHECKOUT_BASE_PATH . "/data.php");
 
@@ -1935,7 +1958,7 @@ class GFMijirehCheckout {
         return !empty($feed) ? $feed : false;
     }
 
-    public static function maybe_thankyou_page(){
+    public static function maybe_thankyou_page() {
 
         if(!self::is_gravityforms_supported())
             return;
@@ -1966,7 +1989,7 @@ class GFMijirehCheckout {
         }
     }
 
-    public static function process_ipn($wp){
+    public static function process_ipn( $wp ) {
 
         if(!self::is_gravityforms_supported())
            return;
@@ -2074,7 +2097,7 @@ class GFMijirehCheckout {
 	    }
     }
 
-    public static function set_payment_status($config, $entry, $status, $transaction_id, $parent_transaction_id, $amount, $mj_order){
+    public static function set_payment_status( $config, $entry, $status, $transaction_id, $parent_transaction_id, $amount, $mj_order ) {
         global $current_user;
         $user_id = 0;
         $user_name = "System";
@@ -2158,7 +2181,7 @@ class GFMijirehCheckout {
 		return $url;
     }
 
-    public static function fulfill_order(&$entry, $transaction_id, $amount){
+    public static function fulfill_order( &$entry, $transaction_id, $amount ) {
 
         $config = self::get_config_by_entry($entry);
         if(!$config){
@@ -2195,7 +2218,7 @@ class GFMijirehCheckout {
         do_action("gform_mijireh_checkout_fulfillment", $entry, $config, $transaction_id, $amount);
     }
 
-    private static function customer_query_string($config, $lead, $mj_order){
+    private static function customer_query_string( $config, $lead, $mj_order ) {
         $fields = "";
 
 		$billing = new Mijireh_Address();
@@ -2253,7 +2276,7 @@ class GFMijirehCheckout {
         return $fields;
     }
 
-    private static function is_valid_initial_payment_amount($config, $lead, $mj_order){
+    private static function is_valid_initial_payment_amount( $config, $lead, $mj_order ) {
 
         $form = RGFormsModel::get_form_meta($lead["form_id"]);
         $products = GFCommon::get_product_fields($form, $lead, true);
@@ -2280,7 +2303,7 @@ class GFMijirehCheckout {
 
     }
 	
-    private static function get_product_query_string($form, $entry, $mj_order){
+    private static function get_product_query_string( $form, $entry, $mj_order ) {
         $fields = "";
         $products = GFCommon::get_product_fields($form, $entry, true);
         $product_index = 1;
@@ -2326,7 +2349,7 @@ class GFMijirehCheckout {
         return $total > 0 ? $total : '0.00';
     }
 
-    private static function get_donation_query_string($form, $entry, $mj_order){
+    private static function get_donation_query_string( $form, $entry, $mj_order ) {
         $fields = "";
 
         //getting all donation fields
@@ -2378,7 +2401,7 @@ class GFMijirehCheckout {
         return $total > 0 ? $total : '0.00';
     }
 
-    public static function uninstall(){
+    public static function uninstall() {
 
         //loading data lib
         require_once(GF_MIJIREHCHECKOUT_BASE_PATH . "/data.php");
@@ -2400,11 +2423,11 @@ class GFMijirehCheckout {
         update_option('recently_activated', array($plugin => time()) + (array)get_option('recently_activated'));
     }
 
-    private static function is_gravityforms_installed(){
+    private static function is_gravityforms_installed() {
         return class_exists("RGForms");
     }
 
-    private static function is_gravityforms_supported(){
+    private static function is_gravityforms_supported() {
         if(class_exists("GFCommon")){
             $is_correct_version = version_compare(GFCommon::$version, self::$min_gravityforms_version, ">=");
             return $is_correct_version;
@@ -2414,7 +2437,7 @@ class GFMijirehCheckout {
         }
     }
 
-    protected static function has_access($required_permission){
+    protected static function has_access( $required_permission ) {
         $has_members_plugin = function_exists('members_get_capabilities');
         $has_access = $has_members_plugin ? current_user_can($required_permission) : current_user_can("level_7");
         if($has_access)
@@ -2423,14 +2446,14 @@ class GFMijirehCheckout {
             return false;
     }
 
-    private static function get_customer_information($form, $config=null){
+    private static function get_customer_information( $form, $config = null ) {
 
         //getting list of all fields for the selected form
         $form_fields = self::get_form_fields($form);
 
         $str = "<table cellpadding='0' cellspacing='0'><tr><td class='mijireh_checkout_col_heading'>" . __("Mijireh Checkout Fields", "gravityformsmijirehcheckout") . "</td><td class='mijireh_checkout_col_heading'>" . __("Form Fields", "gravityformsmijirehcheckout") . "</td></tr>";
         $customer_fields = self::get_customer_fields();
-        foreach($customer_fields as $field){
+        foreach ( $customer_fields as $field ) {
             $selected_field = $config ? $config["meta"]["customer_fields"][$field["name"]] : "";
             $str .= "<tr><td class='mijireh_checkout_field_cell'>" . $field["label"]  . "</td><td class='mijireh_checkout_field_cell'>" . self::get_mapped_field_list($field["name"], $selected_field, $form_fields) . "</td></tr>";
         }
@@ -2439,7 +2462,26 @@ class GFMijirehCheckout {
         return $str;
     }
 
-    private static function get_customer_fields(){
+	private static function get_gateway_field_information( $form, $config = null ) {
+		
+		$form_fields = self::get_form_fields( $form );
+		$selected_field = $config ? $config["meta"]["gateway_field"] : "";
+		
+		$str = '<select name="gf_mijireh_checkout_gateway_field"  id="gf_mijireh_checkout_gateway_field">';
+		$str .= '<option value=""></option>';
+			foreach( $form_fields as $field ) {
+				$field_id = $field[0];
+				$field_label = esc_html( GFCommon::truncate_middle($field[1], 40) );
+				$selected = ( $field_id == $selected_field ) ? 'selected="selected"' : '';
+
+				$str .= "<option value='$field_id' $selected name='$field_label'>$field_label</option>";
+			}
+		$str .= '</select>';
+		
+		return $str;
+	}
+
+    private static function get_customer_fields() {
         return array(
 						array("name" => "first_name" , "label" => "First Name"),
 						array("name" => "last_name" , "label" =>"Last Name"),
@@ -2453,7 +2495,7 @@ class GFMijirehCheckout {
 					);
     }
 
-    private static function get_mapped_field_list($variable_name, $selected_field, $fields){
+    private static function get_mapped_field_list( $variable_name, $selected_field, $fields ) {
         $field_name = "mijireh_checkout_customer_field_" . $variable_name;
         $str = "<select name='$field_name' id='$field_name'><option value=''></option>";
         foreach($fields as $field){
@@ -2467,7 +2509,7 @@ class GFMijirehCheckout {
         return $str;
     }
 
-    private static function get_product_options($form, $selected_field){
+    private static function get_product_options( $form, $selected_field ) {
         $str = "<option value=''>" . __("Select a field", "gravityformsmijirehcheckout") ."</option>";
         $fields = GFCommon::get_fields_by_type($form, array("product"));
 
@@ -2485,7 +2527,7 @@ class GFMijirehCheckout {
         return $str;
     }
 
-    private static function get_form_fields($form){
+    private static function get_form_fields( $form ) {
         $fields = array();
 
         if(is_array($form["fields"])){
@@ -2503,7 +2545,7 @@ class GFMijirehCheckout {
         return $fields;
     }
 
-    private static function return_url($form_id, $lead_id) {
+    private static function return_url( $form_id, $lead_id ) {
         $pageURL = GFCommon::is_ssl() ? "https://" : "http://";
 
         if ($_SERVER["SERVER_PORT"] != "80")

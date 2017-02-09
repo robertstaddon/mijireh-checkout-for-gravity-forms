@@ -3,7 +3,7 @@ Contributors: patsatech
 Tags: ecommerce, payment gateway, gravity forms, mijireh checkout, credit card
 Requires at least: 3.5
 Tested up to: 4.7.2
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 
 Mijireh Checkout Plugin for accepting payments on with your Gravity Forms.
@@ -65,6 +65,9 @@ Send us your ideas and feedback here: http://www.patsatech.com/contact-us
 4. Mijireh Checkout Stats Page
 
 == Changelog ==
+
+= 1.0.4 =
+* Feature: Add the ability to select one Gateway Description Field on each form if Custom Gateway Description is enabled in Settings. The value of the selected field can be passed to the customized Gateway Description using "[form_field]".
 
 = 1.0.3 =
 * Fix: Enabled Mijireh Checkout Condition functionality
