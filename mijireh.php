@@ -1789,11 +1789,16 @@ class GFMijirehCheckout {
         //$config = self::get_active_config($form);
         $config = GFMijirehCheckoutData::get_feed_by_form($form["id"]);
 
-        if (!$config) {
+        if ( !$config ) {
             self::log_debug( "NOT sending to Mijireh Checkout: No Mijireh Checkout setup was located for form_id = {$form['id']}." );
             return $confirmation;
 		} else {
             $config = $config[0]; //using first mijireh feed (only one mijireh feed per form is supported)
+		}
+		
+		if ( !self::has_mijireh_checkout_condition( $form, $config ) ) {
+            self::log_debug( "NOT sending to Mijireh Checkout: Condition was not met for form_id = {$form['id']}." );
+			return $confirmation;
 		}
 
         // updating entry meta with current feed id
@@ -1888,22 +1893,22 @@ class GFMijirehCheckout {
         return $confirmation;
     }
 
-    public static function has_mijireh_checkout_condition($form, $config) {
+    public static function has_mijireh_checkout_condition( $form, $config ) {
 
         $config = $config["meta"];
 
-        $operator = isset($config["mijireh_checkout_conditional_operator"]) ? $config["mijireh_checkout_conditional_operator"] : "";
-        $field = RGFormsModel::get_field($form, $config["mijireh_checkout_conditional_field_id"]);
-
-        if(empty($field) || !$config["mijireh_checkout_conditional_enabled"])
+        $operator = isset( $config["mijireh_checkout_conditional_operator"] ) ? $config["mijireh_checkout_conditional_operator"] : "";
+        $field = RGFormsModel::get_field( $form, $config["mijireh_checkout_conditional_field_id"] );
+		
+        if( empty( $field ) || !$config["mijireh_checkout_conditional_enabled"] )
             return true;
-
+		
         // if conditional is enabled, but the field is hidden, ignore conditional
-        $is_visible = !RGFormsModel::is_field_hidden($form, $field, array());
+        $is_visible = !RGFormsModel::is_field_hidden( $form, $field, array() );
 
-        $field_value = RGFormsModel::get_field_value($field, array());
+        $field_value = RGFormsModel::get_field_value( $field, array() );
 
-        $is_value_match = RGFormsModel::is_value_match($field_value, $config["mijireh_checkout_conditional_value"], $operator);
+        $is_value_match = RGFormsModel::is_value_match( $field_value, $config["mijireh_checkout_conditional_value"], $operator );
         $go_to_mijireh_checkout = $is_value_match && $is_visible;
 
         return  $go_to_mijireh_checkout;
