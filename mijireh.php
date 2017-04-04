@@ -75,6 +75,9 @@ class GFMijirehCheckout {
 		  	add_action( 'add_meta_boxes', array( 'GFMijirehCheckout', 'add_page_slurp_meta' ) );
 		  	add_action( 'wp_ajax_page_slurp', array( 'GFMijirehCheckout', 'page_slurp' ) );
 
+            //remove "text" confirmation option from forms that are Mijireh enabled
+            add_filter( 'gform_confirmation_ui_settings', array('GFMijirehCheckout', 'remove_text_confirmation'), 10, 3 );
+
 
             if ( self::is_mijireh_checkout_page() ) {
 
@@ -2682,7 +2685,28 @@ class GFMijirehCheckout {
 		RGFormsModel::update_lead($lead);
 		RGFormsModel::add_note( $lead["id"], $user_id, $user_name, sprintf( __( "Payment information was manually updated. Status: %s. Amount: %s. Transaction Id: %s. Date: %s", "gravityforms" ), $lead["payment_status"], GFCommon::to_money( $lead["payment_amount"], $lead["currency"] ), $payment_transaction, $lead["payment_date"] ) );
 	}
+     
+     public static function remove_text_confirmation( $ui_settings, $confirmation, $form ) {
+          $mijireh_config = GFMijirehCheckout::get_config( $form['id'] );
+          if( $mijireh_config ) {
+               $ui_settings['remove_text_message'] = '<p>' . __('<strong>Mijireh Checkout Note:</strong> The <em>Text</em> confirmation type has been removed because this form is connected to Mijireh Checkout, which requires a <em>Page</em> or <em>Redirect</em> confirmation type instead.', 'gravityformsmijirehcheckout') . '</p>';
 
+               ob_start();
+               ?>
+
+               <style>
+                    #form_confirmation_show_message, label[for=form_confirmation_show_message], #form_confirmation_message_container {
+                        display: none !important;
+                    }
+               </style>
+
+               <?php
+               $ui_settings['remove_text_stylesheet'] = ob_get_contents();
+               ob_clean();
+          }
+          return $ui_settings;
+     }
+     
 	public static function set_logging_supported( $plugins ) {
 		$plugins[self::$slug] = "Mijireh Checkout";
 		return $plugins;
