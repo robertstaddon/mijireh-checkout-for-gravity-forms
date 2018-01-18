@@ -65,7 +65,7 @@ class Mijireh_Order extends Mijireh_Model {
     }
   }
 
-  public function copy_from($order_data) {
+  public function copy_from(array $order_data) {
     foreach($order_data as $key => $value) {
       if($key == 'items') {
         if(is_array($value)) {
