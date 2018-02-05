@@ -2178,8 +2178,8 @@ class GFMijirehCheckout {
 
 		}
 				
-        self::log_debug("Before gform_post_payment_status.");
-        do_action("gform_post_payment_status", $config, $entry, $status, $transaction_id, $amount);
+          self::log_debug("Before gform_post_payment_status.");
+          do_action("gform_post_payment_status", $config, $entry, $status, $transaction_id, '', $amount, '', '');
 		
 		return $url;
     }
