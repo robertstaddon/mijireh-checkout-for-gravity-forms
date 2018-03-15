@@ -3,7 +3,7 @@
  * Plugin Name: Mijireh Checkout for Gravity Forms
  * Plugin URI: http://www.patsatech.com/
  * Description: Allows for integration with the Mijireh Checkout payment gateway.
- * Version: 1.0.6
+ * Version: 1.0.7
  * Author: robertstaddon
  * Author URI: http://www.abundantdesigns.com
  * Contributors: patsatech, robertstaddon
@@ -2133,7 +2133,7 @@ class GFMijirehCheckout {
                         }
 						
                         self::log_debug("Updating entry.");
-                        RGFormsModel::update_lead($entry);
+                        GFAPI::update_entry( $entry );
                         self::log_debug("Adding note.");
                     	RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("Payment has been approved. Amount: %s. Transaction Id: %s", "gravityforms"), GFCommon::to_money($entry["payment_amount"], $entry["currency"]), $transaction_id));
 					}else{
@@ -2154,7 +2154,7 @@ class GFMijirehCheckout {
                         $entry["payment_amount"] = $amount;
                         $entry["transaction_type"] = 1; //payment
                         self::log_debug("Setting entry as Pending.");
-                        RGFormsModel::update_lead($entry);
+                        GFAPI::update_entry( $entry );
 					}
                     RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("Payment is pending. Amount: %s. Transaction Id: %s. Reason: %s", "gravityforms"), GFCommon::to_money($amount, $entry["currency"]), $transaction_id, self::get_pending_reason($pending_reason)));
 				}
@@ -2168,7 +2168,7 @@ class GFMijirehCheckout {
                 	if($entry["transaction_type"] == 1){
                     	$entry["payment_status"] = "Failed";
                         self::log_debug("Setting entry as Failed.");
-                        RGFormsModel::update_lead($entry);
+                        GFAPI::update_entry( $entry );
 					}
                     RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("Payment has Failed. Failed payments occur when they are made via your customer's bank account and could not be completed. Transaction Id: %s", "gravityforms"), $transaction_id));
 			    }
@@ -2682,7 +2682,7 @@ class GFMijirehCheckout {
         	$lead["is_fulfilled"] = true;
 		}
 		//update lead, add a note
-		RGFormsModel::update_lead($lead);
+		GFAPI::update_entry( $lead );
 		RGFormsModel::add_note( $lead["id"], $user_id, $user_name, sprintf( __( "Payment information was manually updated. Status: %s. Amount: %s. Transaction Id: %s. Date: %s", "gravityforms" ), $lead["payment_status"], GFCommon::to_money( $lead["payment_amount"], $lead["currency"] ), $payment_transaction, $lead["payment_date"] ) );
 	}
      
