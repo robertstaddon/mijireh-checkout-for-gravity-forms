@@ -2634,56 +2634,68 @@ class GFMijirehCheckout {
 		<?php
 	}
 
-	public static function admin_update_payment( $form, $lead_id ) {
+	public static function admin_update_payment( $form, $entry_id ) {
 		check_admin_referer( 'gforms_save_entry', 'gforms_save_entry' );
-		//update payment information in admin, need to use this function so the lead data is updated before displayed in the sidebar info section
+          
+		//update payment information in admin, need to use this function so the entry data is updated before displayed in the sidebar info section
 		//check meta to see if this entry is mijirehcheckout
-		$payment_gateway = gform_get_meta( $lead_id, "payment_gateway" );
-		$form_action = strtolower( rgpost("save") );
-		if ( $payment_gateway <> "mijirehcheckout" || $form_action <> "update" )
+		$payment_gateway = gform_get_meta( $entry_id, 'payment_gateway' );
+		$form_action = strtolower( rgpost('save') );
+		if ( $payment_gateway <> 'mijirehcheckout' || $form_action <> 'update' )
 			return;
-		//get lead
-		$lead = RGFormsModel::get_lead( $lead_id );
+          
+		//get entry
+		$entry = RGFormsModel::get_lead( $entry_id );
+
 		//get payment fields to update
-		$payment_status = rgpost( "payment_status" );
-		//when updating, payment status may not be editable, if no value in post, set to lead payment status
+		$payment_status = rgpost( 'payment_status' );
+		//when updating, payment status may not be editable, if no value in post, set to entry payment status
 		if ( empty( $payment_status ) ) {
-			$payment_status = $lead["payment_status"];
+			$payment_status = $entry['payment_status'];
 		}
 
-		$payment_amount = rgpost( "payment_amount" );
-		$payment_transaction = rgpost( "mijireh_checkout_transaction_id" );
-		$payment_date = rgpost( "payment_date" );
-		if ( empty( $payment_date ) ) {
-			$payment_date = gmdate("y-m-d H:i:s");
+     	$payment_amount      = GFCommon::to_number( rgpost( 'payment_amount' ) );
+		$payment_transaction = rgpost( 'mijireh_checkout_transaction_id' );
+		$payment_date        = rgpost( "payment_date" );
+
+		$status_unchanged = $entry['payment_status'] == $payment_status;
+		$amount_unchanged = $entry['payment_amount'] == $payment_amount;
+		$id_unchanged     = $entry['transaction_id'] == $payment_transaction;
+		$date_unchanged   = $entry['payment_date'] == $payment_date;
+
+		if ( $status_unchanged && $amount_unchanged && $id_unchanged && $date_unchanged ) {
+			return;
 		}
-		else {
+          
+		if ( empty( $payment_date ) ) {
+			$payment_date = gmdate( 'y-m-d H:i:s' );
+		} else {
 			//format date entered by user
-			$payment_date = date( "Y-m-d H:i:s", strtotime( $payment_date ) );
+			$payment_date = date( 'Y-m-d H:i:s', strtotime( $payment_date ) );
 		}
 
 		global $current_user;
-		$user_id = 0;
-        $user_name = "System";
-        if ( $current_user && $user_data = get_userdata( $current_user->ID ) ) {
-            $user_id = $current_user->ID;
-            $user_name = $user_data->display_name;
-        }
+		$user_id   = 0;
+		$user_name = 'System';
+		if ( $current_user && $user_data = get_userdata( $current_user->ID ) ) {
+			$user_id   = $current_user->ID;
+			$user_name = $user_data->display_name;
+		}
 
-		$lead["payment_status"] = $payment_status;
-		$lead["payment_amount"] = $payment_amount;
-		$lead["payment_date"] =   $payment_date;
-		$lead["transaction_id"] = $payment_transaction;
+		$entry['payment_status'] = $payment_status;
+		$entry['payment_amount'] = $payment_amount;
+		$entry['payment_date']   = $payment_date;
+		$entry['transaction_id'] = $payment_transaction;
 
-		// if payment status does not equal approved or the lead has already been fulfilled, do not continue with fulfillment
-        if ( $payment_status == 'Approved' && !$lead["is_fulfilled"] ) {
-        	//call fulfill order, mark lead as fulfilled
-        	self::fulfill_order($lead, $payment_transaction, $payment_amount);
-        	$lead["is_fulfilled"] = true;
+		// if payment status does not equal approved or the entry has already been fulfilled, do not continue with fulfillment
+		if ( ( $payment_status == 'Approved' || $payment_status == 'Paid' ) && ! $entry['is_fulfilled'] ) {
+        		//call fulfill order, mark entry as fulfilled
+        		self::fulfill_order($entry, $payment_transaction, $payment_amount);
+        		$entry['is_fulfilled'] = true;
 		}
 		//update lead, add a note
-		GFAPI::update_entry( $lead );
-		RGFormsModel::add_note( $lead["id"], $user_id, $user_name, sprintf( __( "Payment information was manually updated. Status: %s. Amount: %s. Transaction Id: %s. Date: %s", "gravityforms" ), $lead["payment_status"], GFCommon::to_money( $lead["payment_amount"], $lead["currency"] ), $payment_transaction, $lead["payment_date"] ) );
+		GFAPI::update_entry( $entry );
+		GFFormsModel::add_note( $entry['id'], $user_id, $user_name, sprintf( esc_html__( 'Payment information was manually updated. Status: %s. Amount: %s. Transaction ID: %s. Date: %s', 'gravityformsmijirehcheckout' ), $entry['payment_status'], GFCommon::to_money( $entry['payment_amount'], $entry['currency'] ), $payment_transaction, $entry['payment_date'] ) );
 	}
      
      public static function remove_text_confirmation( $ui_settings, $confirmation, $form ) {
