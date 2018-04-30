@@ -3,12 +3,12 @@
  * Plugin Name: Mijireh Checkout for Gravity Forms
  * Plugin URI: http://www.patsatech.com/
  * Description: Allows for integration with the Mijireh Checkout payment gateway.
- * Version: 1.0.7
+ * Version: 1.0.8
  * Author: robertstaddon
  * Author URI: http://www.abundantdesigns.com
  * Contributors: patsatech, robertstaddon
  * Requires at least: 3.5
- * Tested up to: 4.9.2
+ * Tested up to: 4.9.5
  *
  * Text Domain: gravityformsmijirehcheckout
  * Domain Path: /lang/

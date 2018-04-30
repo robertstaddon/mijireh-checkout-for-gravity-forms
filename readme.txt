@@ -3,7 +3,7 @@ Contributors: patsatech
 Tags: ecommerce, payment gateway, gravity forms, mijireh checkout, credit card
 Requires at least: 3.5
 Tested up to: 4.9.2
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 
 Mijireh Checkout Plugin for accepting payments on with your Gravity Forms.
@@ -65,6 +65,9 @@ Send us your ideas and feedback here: http://www.patsatech.com/contact-us
 4. Mijireh Checkout Stats Page
 
 == Changelog ==
+
+= 1.0.8 =
+* Fix: Update admin_update_payment() code to use updated code from Gravity Forms PayPal addon. This should resolve the issue with amounts over $1,000 displaying incorrectly in the entry sidebar.
 
 = 1.0.7 =
 * Fix: Repair bug that triggered PHP Fatal error when returning from a successful payment
